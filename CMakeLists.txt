@@ -29,6 +29,10 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(glad)
 
 add_executable(untitled1 src/main.cpp
+        src/Events/Events.cpp
+        src/Events/Events.h
+        src/Window/Window.cpp
+        src/Window/Window.h
 )
 
 # Подключаем зависимости
