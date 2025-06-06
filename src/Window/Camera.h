@@ -10,8 +10,8 @@
 
 class Camera {
 public:
-    glm::vec3 Position = glm::vec3(0.0f, 0.0f, 3.0f);
-    glm::vec3 Front = glm::vec3(0.0f, 0.0f, -1.0f);
+    glm::vec3 Position = glm::vec3(0.0f, 0.0f, 5.0f); // Отодвинули камеру назад
+    glm::vec3 Front = glm::vec3(0.0f, 0.0f, -1.0f); // Смотрит вдоль оси Z
     glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
     float Speed = 2.5f;
     float Sensitivity = 0.1f;

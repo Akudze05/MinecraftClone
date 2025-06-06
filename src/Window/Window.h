@@ -11,7 +11,7 @@ class Window {
     static float vertex[];
 public:
     static Camera camera;
-    static int shaderProgram;
+    static unsigned int shaderProgram;
     static unsigned int VAO, VBO;
     static glm::mat4 projection;
     static unsigned int projLoc;

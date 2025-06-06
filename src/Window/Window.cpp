@@ -22,9 +22,24 @@ unsigned int Window::projLoc = 0;  // <-- Добавьте это
 unsigned int Window::viewLoc = 0;  // <-- И это
 glm::mat4 Window::projection = glm::mat4(1.0f);
 
+unsigned int Window::shaderProgram;  // Добавляем это
+unsigned int Window::VAO = 0;        // Добавляем это
+unsigned int Window::VBO = 0;
+
 GLFWwindow* Window::window;
 
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
+
 float vertices[] = {
+    //1
+    -0.3f, -0.5f, 0.0f,
+    0.3f, -0.5f, 0.0f,
+    -0.3, 0.5f, 0.0f,
+    0.3f, 0.5f, 0.0f,
+    0.3f, -0.5f, 0.0f,
+    -0.3f, 0.5f, 0.0f,
+    //2
     -0.3f, -0.5f, 0.0f,
     0.3f, -0.5f, 0.0f,
     -0.3, 0.5f, 0.0f,
@@ -57,7 +72,7 @@ const char *vertexShaderSource = "#version 330 core\n"
 const char *fragmentShaderSource = "#version 330 core\n"
 "out vec4 FragColor;\n"
 "void main() {\n"
-"   FragColor = vec4(1f, 0.2f, 0.2f, 1f);\n"
+"   FragColor = vec4(1f, 1f, 1f, 1f);\n"
 "}\0";
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
@@ -163,11 +178,11 @@ int Window::initialize(int width, int height, const char *title) {
     glBindVertexArray(Window::VAO);
 
 
-    glm::mat4 projection = glm::perspective(
-        glm::radians(45.0f),
-        (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT,
-        0.1f, 100.0f
-    );
+    projection = glm::perspective(
+    glm::radians(45.0f),
+    (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT,
+    0.1f, 100.0f
+);
 
     // Получаем location uniform-переменных (один раз!)
     Window::viewLoc = glGetUniformLocation(Window::shaderProgram, "view");
@@ -214,6 +229,13 @@ void Window::mainloop() {
     while (!isShouldClose()) {
         // Input processing
         processInput();
+
+        float currentFrame = glfwGetTime();
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+
+        camera.Speed = 60.0f * deltaTime;
+
         // Activate shader
         glUseProgram(shaderProgram);
         glBindVertexArray(VAO);
@@ -229,7 +251,8 @@ void Window::mainloop() {
         glClear(GL_COLOR_BUFFER_BIT);
 
         // rendering here ...
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glDrawArrays(GL_TRIANGLES, 0, 12);
+
 
         // Poll events and swap boofers
         swapBuffers();
