@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.31)
+cmake_minimum_required(VERSION 3.31) # 3.31
 project(untitled1)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -30,9 +30,11 @@ FetchContent_MakeAvailable(glad)
 
 add_executable(untitled1 src/main.cpp
         src/Events/Events.cpp
-        src/Events/Events.h
+#        src/Events/Events.h
         src/Window/Window.cpp
-        src/Window/Window.h
+#        src/Window/Window.h
+        src/Window/Camera.cpp
+#        src/Window/Camera.h
 )
 
 # Подключаем зависимости

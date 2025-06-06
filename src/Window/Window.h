@@ -2,12 +2,22 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
+#include "Camera.h"
+
 class GLFWwindow;
 
 class Window {
     static GLFWwindow* window;
     static float vertex[];
 public:
+    static Camera camera;
+    static int shaderProgram;
+    static unsigned int VAO, VBO;
+    static glm::mat4 projection;
+    static unsigned int projLoc;
+    static unsigned int viewLoc;
+    static float lastX, lastY;
+    static bool firstMouse;
 
     static int initialize(int width, int height, const char* title);
     static void terminate();
