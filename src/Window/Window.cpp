@@ -42,13 +42,55 @@ unsigned int Window::texture = 0;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
+//              0,0,0 (top right) 1,0,0 (top left)
+//              +-----------------+
+//              | \               |
+//              |   \             |
+//              |     \           |
+//              |       \         |
+//              |         \       |
+//              |           \     |
+//              +-----------------+
+//              0,0,1 (bottom right)  1,0,1 (bottom left)
+
 float vertices[] = {
-    // positions      // colors           // texture coords
-    0.5f, 0.5f, 0.0f,   1.0f, 1.0f, 1.0f, 1.0f, 1.0f, // top right
-    0.5f, -0.5f, 0.0f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, // bottom right
-    -0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, // bottom left
-    -0.5f, 0.5f, 0.0f,  1.0f, 1.0f, 1.0f, 0.0f, 1.0f // top left
-    };
+    // Позиции          // Цвета       // Текстурные координаты
+    // Передняя грань (Z+)
+    -0.5f, -0.5f,  0.5f, 1.0f,1.0f,1.0f, 0.0f, 0.0f, // 0
+     0.5f, -0.5f,  0.5f, 1.0f,1.0f,1.0f, 1.0f, 0.0f, // 1
+     0.5f,  0.5f,  0.5f, 1.0f,1.0f,1.0f, 1.0f, 1.0f, // 2
+    -0.5f,  0.5f,  0.5f, 1.0f,1.0f,1.0f, 0.0f, 1.0f, // 3
+
+    // Задняя грань (Z-)
+    -0.5f, -0.5f, -0.5f, 1.0f,1.0f,1.0f, 1.0f, 0.0f, // 4
+     0.5f, -0.5f, -0.5f, 1.0f,1.0f,1.0f, 0.0f, 0.0f, // 5
+     0.5f,  0.5f, -0.5f, 1.0f,1.0f,1.0f, 0.0f, 1.0f, // 6
+    -0.5f,  0.5f, -0.5f, 1.0f,1.0f,1.0f, 1.0f, 1.0f, // 7
+
+    // Верхняя грань (Y+)
+    -0.5f,  0.5f,  0.5f, 1.0f,1.0f,1.0f, 0.0f, 1.0f, // 8  (3)
+     0.5f,  0.5f,  0.5f, 1.0f,1.0f,1.0f, 1.0f, 1.0f, // 9  (2)
+     0.5f,  0.5f, -0.5f, 1.0f,1.0f,1.0f, 1.0f, 0.0f, // 10 (6)
+    -0.5f,  0.5f, -0.5f, 1.0f,1.0f,1.0f, 0.0f, 0.0f, // 11 (7)
+
+    // Нижняя грань (Y-)
+    -0.5f, -0.5f,  0.5f, 1.0f,1.0f,1.0f, 0.0f, 0.0f, // 12 (0)
+     0.5f, -0.5f,  0.5f, 1.0f,1.0f,1.0f, 1.0f, 0.0f, // 13 (1)
+     0.5f, -0.5f, -0.5f, 1.0f,1.0f,1.0f, 1.0f, 1.0f, // 14 (5)
+    -0.5f, -0.5f, -0.5f, 1.0f,1.0f,1.0f, 0.0f, 1.0f, // 15 (4)
+
+    // Правая грань (X+)
+     0.5f, -0.5f,  0.5f, 1.0f,1.0f,1.0f, 0.0f, 0.0f, // 16 (1)
+     0.5f,  0.5f,  0.5f, 1.0f,1.0f,1.0f, 0.0f, 1.0f, // 17 (2)
+     0.5f,  0.5f, -0.5f, 1.0f,1.0f,1.0f, 1.0f, 1.0f, // 18 (6)
+     0.5f, -0.5f, -0.5f, 1.0f,1.0f,1.0f, 1.0f, 0.0f, // 19 (5)
+
+    // Левая грань (X-)
+    -0.5f, -0.5f,  0.5f, 1.0f,1.0f,1.0f, 1.0f, 0.0f, // 20 (0)
+    -0.5f,  0.5f,  0.5f, 1.0f,1.0f,1.0f, 1.0f, 1.0f, // 21 (3)
+    -0.5f,  0.5f, -0.5f, 1.0f,1.0f,1.0f, 0.0f, 1.0f, // 22 (7)
+    -0.5f, -0.5f, -0.5f, 1.0f,1.0f,1.0f, 0.0f, 0.0f  // 23 (4)
+};
 
 bool firstMouse = true;
 
@@ -71,21 +113,6 @@ const char *vertexShaderSource = "#version 330 core\n"
 "   TexCoord = aTexCoord;\n"
 "}\0";
 
-
-
-// #version 330 core           gl_Position
-// layout (location = 0) in vec3 aPos;
-// layout (location = 1) in vec3 aColor;
-// layout (location = 2) in vec2 aTexCoord;
-// out vec3 ourColor;
-// out vec2 TexCoord;
-// void main()
-// {
-//     gl_Position = vec4(aPos, 1.0);
-//     ourColor = aColor;
-//     TexCoord = aTexCoord;
-// }
-
 const char *fragmentShaderSource = "#version 330 core\n"
 "out vec4 FragColor;\n"
 "in vec3 ourColor;\n"
@@ -100,7 +127,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
 }
 
-// Коллбэк для мыши:
+// Callback for mouse:
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
     if (Window::firstMouse) {
         Window::lastX = xpos;
@@ -192,11 +219,6 @@ int Window::initialize(int width, int height, const char *title) {
 
     glUseProgram(shaderProgram);
 
-    unsigned int indices[] = {
-        0, 1, 3, // first triangle
-        1, 2, 3  // second triangle
-    };
-
     // Исправьте:
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
@@ -234,6 +256,9 @@ int Window::initialize(int width, int height, const char *title) {
     } else {
         std::cout << "[:ERROR:] Failed to load texture" << std::endl;
     }
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
     stbi_image_free(data);
 
@@ -291,8 +316,29 @@ void Window::mainloop() {
 
     // Set up EBO
     unsigned int indices[] = {
-        0, 1, 3, // first triangle
-        1, 2, 3  // second triangle
+        // Передняя грань
+        0, 1, 2,
+        2, 3, 0,
+
+        // Задняя грань
+        4, 5, 6,
+        6, 7, 4,
+
+        // Верхняя грань
+        8, 9, 10,
+        10, 11, 8,
+
+        // Нижняя грань
+        12, 13, 14,
+        14, 15, 12,
+
+        // Правая грань
+        16, 17, 18,
+        18, 19, 16,
+
+        // Левая грань
+        20, 21, 22,
+        22, 23, 20
     };
 
     unsigned int EBO;
@@ -312,9 +358,11 @@ void Window::mainloop() {
         // Clear buffers
         glClearColor(0.3f, 0.6f, 0.75f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+        
         // Activate shader
         glUseProgram(shaderProgram);
+
+        glEnable(GL_DEPTH_TEST);
 
         // Set up view/projection matrices
         glm::mat4 view = camera.GetViewMatrix();
@@ -328,7 +376,7 @@ void Window::mainloop() {
 
         // Draw
         glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 
         // Swap buffers and poll events
         swapBuffers();
@@ -349,4 +397,3 @@ void Window::swapBuffers() {
 bool Window::isShouldClose() {
     return glfwWindowShouldClose(window);
 }
-
