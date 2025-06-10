@@ -11,13 +11,19 @@ const char* TITLE = "Minecraft";
 GLFWwindow* Window::window = nullptr;
 
 unsigned int VBO = 0;
-
 unsigned int VAO = 0;
+unsigned int EBO = 0;
 
 float vertex[] = {
-	0.0f, 0.5f, 0.0f,
+	0.5f, 0.5f, 0.0f,
 	0.5f, -0.5f, 0.0f,
-	-0.5f, -0.5f, 0.0f
+	-0.5f, -0.5f, 0.0f,
+	-0.5f, 0.5f, 0.0f
+};
+
+unsigned int indices[] = {
+	0, 1, 3, // for first triangle
+	1, 2 ,3 // for second triangles
 };
 
 // shaders
@@ -89,7 +95,6 @@ int Window::Init(int width, int height, const char *title) {
 	}
 
 	glGenBuffers(1, &VBO);
-
 	glGenVertexArrays(1, &VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO); // copy vertex array to buffer for openGL use to
@@ -139,6 +144,10 @@ int Window::Init(int width, int height, const char *title) {
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
 
+	glGenBuffers(1, &EBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 	glEnableVertexAttribArray(0);
 
@@ -158,7 +167,7 @@ void Window::mainloop() {
 		glClearColor(0.23f, 0.3f, 0.25f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 		// swap buffers
 		glfwSwapBuffers(window);
