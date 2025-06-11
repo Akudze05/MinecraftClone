@@ -12,44 +12,130 @@ const char* TITLE = "Minecraft";
 
 GLFWwindow* Window::window = nullptr;
 
-unsigned int VBO = 0;
-unsigned int VAO = 0;
-unsigned int EBO = 0;
+unsigned int Window::transformLoc = 0;
 
 float vertex[] = {
-	// positions // colors // texture coords
-	 0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  1.0f, // top right
-	 0.5f, -0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f, // bottom right
-	-0.5f, -0.5f,  0.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f, // bottom left
-	-0.5f,  0.5f,  0.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f // top left
+
+	// Передняя грань
+	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+	 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+	 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+	-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+
+	// Задняя грань
+	-0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+	 0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+	 0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+	-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+
+	// Левая грань
+	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+	-0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+	-0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+
+	// Правая грань
+	 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+	 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+	 0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+
+	// Верхняя грань
+	-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+	 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+	 0.5f,  0.5f, -0.5f,  1.0f, 0.0f,
+	-0.5f,  0.5f, -0.5f,  0.0f, 0.0f,
+
+	// Нижняя грань
+	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+	 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+	 0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f
+
 };
 
 unsigned int indices[] = {
-	0, 1, 3, // for first triangle
-	1, 2 ,3 // for second triangles
+
+	// Передняя грань
+	0, 1, 2,
+	2, 3, 0,
+
+	// Задняя грань
+	4, 5, 6,
+	6, 7, 4,
+
+	// Левая грань
+	8, 9, 10,
+	10, 11, 8,
+
+	// Правая грань
+	12, 13, 14,
+	14, 15, 12,
+
+	// Верхняя грань
+	16, 17, 18,
+	18, 19, 16,
+
+	// Нижняя грань
+	20, 21, 22,
+	22, 23, 20
 };
 
-float textCoords[] = {
-	1.0f, 1.0f,
-	1.0f, 0.0f,
-	0.0f, 0.0f,
-	0.0f, 1.0f
+glm::vec3 cubePositions[] = {
+	glm::vec3( 0.0f, 0.0f, 0.0f),
+	glm::vec3( 2.0f, 5.0f, -15.0f),
+	glm::vec3(-1.5f, -2.2f, -2.5f),
+	glm::vec3(-3.8f, -2.0f, -12.3f),
+	glm::vec3( 2.4f, -0.4f, -3.5f),
+	glm::vec3(-1.7f, 3.0f, -7.5f),
+	glm::vec3( 1.3f, -2.0f, -2.5f),
+	glm::vec3( 1.5f, 2.0f, -2.5f),
+	glm::vec3( 1.5f, 0.2f, -1.5f),
+	glm::vec3(-1.3f, 1.0f, -1.5f)
 };
 
-unsigned int texture = 0;
+unsigned int transformLoc;
+unsigned int modelLoc;
+unsigned int viewLoc;
+unsigned int projectionLoc;
+
+glm::mat4 Window::model;
+glm::mat4 Window::view;
+glm::mat4 Window::projection;
+
+unsigned int Window::VBO;
+unsigned int Window::VAO;
+unsigned int Window::EBO;
+unsigned int Window::texture;
+
+double Window::lastTime;
+int Window::frameCount;
+double Window::fps;
+
+glm::vec3 Window::cameraPos;
+glm::vec3 Window::cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 Window::cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+glm::vec3 Window::up;
+
+float deltaTime = 0.0f; // Time between current frame and last frame
+float lastsFrame = 0.0f; // Time of last frame
 
 // shaders
 
-unsigned int shaderProgram;
+unsigned int Window::shaderProgram;
 
 unsigned int vertexShader;
 const char *vertex_shader_source = "#version 330 core\n"
 "layout (location = 0) in vec3 aPos;\n"
 "layout (location = 1) in vec2 aTexCoord;\n"
 "out vec2 TexCoord;\n"
+"uniform mat4 transform;\n"
+"uniform mat4 model;\n"
+"uniform mat4 view;\n"
+"uniform mat4 projection;\n"
 "void main() {\n"
-"	gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-"	TexCoord = aTexCoord;\n"
+"   gl_Position = projection * view * model * transform * vec4(aPos, 1.0f);\n"
+"   TexCoord = aTexCoord;\n"
 "}\0";
 
 unsigned int fragmentShader;
@@ -58,7 +144,7 @@ const char *fragment_shader_source = "#version 330 core\n"
 "in vec2 TexCoord;\n"
 "uniform sampler2D ourTexture;\n"
 "void main() {\n"
-"	FragColor = texture(ourTexture, TexCoord);\n"
+"   FragColor = texture(ourTexture, TexCoord);\n"
 "}\0";
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
@@ -69,20 +155,16 @@ void Window::processInput() {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
 
-	// float cameraSpeed = 2.5f * deltaTime;  // Фиксированная скорость с учетом deltaTime
+	const float cameraSpeed = 2.5f * deltaTime; // adjust accordingly
 
-	// if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-	// 	camera.Position += cameraSpeed * camera.Front;
-	// if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-	// 	camera.Position -= cameraSpeed * camera.Front;
-	// if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-	// 	camera.Position -= glm::normalize(glm::cross(camera.Front, camera.Up)) * cameraSpeed;
-	// if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-	// 	camera.Position += glm::normalize(glm::cross(camera.Front, camera.Up)) * cameraSpeed;
-	// if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-	// 	camera.Position += cameraSpeed * camera.Up;
-	// if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
-	// 	camera.Position -= cameraSpeed * camera.Up;
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		cameraPos += cameraSpeed * cameraFront;
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		cameraPos -= cameraSpeed * cameraFront;
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 }
 int Window::Init(int width, int height, const char *title) {
 	if (!glfwInit()) {
@@ -120,11 +202,11 @@ int Window::Init(int width, int height, const char *title) {
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertex), vertex, GL_STATIC_DRAW);
 
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
 	// Текстурные координаты (атрибут 1 - соответствует шейдеру)
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float))); // 5 or 8
 	glEnableVertexAttribArray(1);;
 
 	// Set EBO
@@ -175,6 +257,33 @@ int Window::Init(int width, int height, const char *title) {
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
 
+	// Получаем location uniform-переменных
+	transformLoc = glGetUniformLocation(shaderProgram, "transform");
+	modelLoc = glGetUniformLocation(shaderProgram, "model");
+	viewLoc = glGetUniformLocation(shaderProgram, "view");
+	projectionLoc = glGetUniformLocation(shaderProgram, "projection");
+
+	// Настройка матриц
+	model = glm::mat4(1.0f);
+	model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
+	view = glm::mat4(1.0f);
+	view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+
+	projection = glm::perspective(glm::radians(45.0f), (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT, 0.1f, 100.0f);
+
+	// Camera
+
+	cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+
+	glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
+	glm::vec3 cameraDirection = glm::normalize(cameraPos - cameraTarget);
+
+	up = glm::vec3(0.0f, 1.0f, 0.0f);
+	glm::vec3 cameraRight = glm::normalize(glm::cross(up, cameraDirection));
+
+	glm::vec3 cameraUp = glm::cross(cameraDirection, cameraRight);
+
     // texture
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
@@ -200,34 +309,93 @@ int Window::Init(int width, int height, const char *title) {
 		std::cout << "[:ERROR:TEXTURE:] Failed to load texture" << std::endl;
 	}
 
+	glUniform1i(glGetUniformLocation(shaderProgram, "ourTexture"), 0);
+
 	stbi_image_free(data);
 
 	glViewport(0, 0, width, height);
 	SetFramebufferSize();
 
+	glEnable(GL_DEPTH_TEST);
+
 	return 0;
 }
 
 void Window::mainloop() {
-	Init(WINDOW_WIDTH, WINDOW_HEIGHT, "Minecraft 2");
+	if (Init(WINDOW_WIDTH, WINDOW_HEIGHT, "Minecraft 2") != 0) {
+		std::cout << "[:ERROR:] Failed initialization!" << std::endl;
+		return; // Инициализация не удалась
+	}
+
+	lastTime = glfwGetTime();
+	frameCount = 0;
+	fps = 0.0;
 
 	while (!glfwWindowShouldClose(window)) {
+		// Подсчёт FPS
+		double currentTime = glfwGetTime();
+		frameCount++;
+
+		// Если прошла секунда - обновляем FPS
+		if (currentTime - lastTime >= 1.0) {
+			fps = frameCount;
+			frameCount = 0;
+			lastTime = currentTime;
+
+			// Выводим FPS в заголовок окна
+			std::string title = std::string(TITLE) + " | FPS: " + std::to_string((int)fps);
+			glfwSetWindowTitle(window, title.c_str());
+		}
+
+		float currentFrame = glfwGetTime();
+		deltaTime = currentFrame - lastsFrame;
+		lastsFrame = currentFrame;
+
 		processInput();
 
+		view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+
 		glClearColor(0.23f, 0.3f, 0.25f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		glUseProgram(shaderProgram);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture);
 
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+		glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+		// Создаем матрицу преобразования для вращения куба
+		auto trans = glm::mat4(1.0f);
+		trans = glm::translate(trans, glm::vec3(0.0f, 0.0f, 0.0f));
+		trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.5f, 1.0f, 5.0f));
+
+		glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
+
 		glBindVertexArray(VAO);
 
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		for(unsigned int i = 0; i < 10; i++) {
+			// Создаем модельную матрицу для каждого куба
+			glm::mat4 model = glm::mat4(1.0f);
+			model = glm::translate(model, cubePositions[i]);
+			model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.5f, 1.0f, 0.0f));
+
+			// Передаем модельную матрицу в шейдер
+			glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+			glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+		}
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
+
+	glDeleteVertexArrays(1, &VAO);
+	glDeleteBuffers(1, &VBO);
+	glDeleteBuffers(1, &EBO);
+	glDeleteTextures(1, &texture);
+	glDeleteProgram(shaderProgram);
 
 	glfwTerminate();
 }
