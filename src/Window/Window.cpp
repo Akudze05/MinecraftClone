@@ -112,10 +112,14 @@ double Window::lastTime;
 int Window::frameCount;
 double Window::fps;
 
+
+
 glm::vec3 Window::cameraPos;
 glm::vec3 Window::cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 Window::cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 glm::vec3 Window::up;
+
+glm::vec3 Window::direction;
 
 float deltaTime = 0.0f; // Time between current frame and last frame
 float lastsFrame = 0.0f; // Time of last frame
@@ -149,6 +153,39 @@ const char *fragment_shader_source = "#version 330 core\n"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
+}
+
+float lastX = 400, lastY = 300;
+float yaw = -90.0f;
+float pitch = 0.0f;
+bool firstMouse;
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+	if (firstMouse)
+	{
+		lastX = xpos;
+		lastY = ypos;
+		firstMouse = false;
+	}
+	float xoffset = xpos - lastX;
+	float yoffset = lastY - ypos;
+	lastX = xpos;
+	lastY = ypos;
+	float sensitivity = 0.1f;
+	xoffset *= sensitivity;
+	yoffset *= sensitivity;
+	yaw += xoffset;
+	pitch += yoffset;
+	if(pitch > 89.0f)
+		pitch = 89.0f;
+	if(pitch < -89.0f)
+		pitch = -89.0f;
+	glm::vec3 direction;
+	direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	direction.y = sin(glm::radians(pitch));
+	direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+	Window::cameraFront = glm::normalize(direction);
 }
 
 void Window::processInput() {
@@ -310,6 +347,10 @@ int Window::Init(int width, int height, const char *title) {
 	}
 
 	glUniform1i(glGetUniformLocation(shaderProgram, "ourTexture"), 0);
+
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+	glfwSetCursorPosCallback(window, mouse_callback);
 
 	stbi_image_free(data);
 

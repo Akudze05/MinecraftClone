@@ -25,6 +25,7 @@ public:
 	static glm::vec3 cameraFront;
 	static glm::vec3 cameraUp;
 	static glm::vec3 up;
+	static glm::vec3 direction;
 	// static float vertex[];
 
 	static int Init(int width, int height, const char* title);
