@@ -1,12 +1,10 @@
-//
-// Created by Asg on 09.06.2025.
-//
 
 #ifndef WINDOW_H
 #define WINDOW_H
 #include <C:\Users\Asg\CLionProjects\MineEngine\dependencies\glm\glm.hpp> // SET YOUR PATH TO GLM
 #include <C:\Users\Asg\CLionProjects\MineEngine\dependencies\glm/gtc/matrix_transform.hpp>
 #include <C:\Users\Asg\CLionProjects\MineEngine\dependencies\glm/gtc/type_ptr.hpp>
+#include <vector>
 #include "GLFW/glfw3.h"
 
 

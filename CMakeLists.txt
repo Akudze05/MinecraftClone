@@ -25,7 +25,12 @@ FetchContent_MakeAvailable(glad)
 
 add_executable(${PROJECT_NAME} src/main.cpp
         src/Window/Window.cpp
-        src/Window/Window.h)
+        src/Window/Window.h
+        src/Chunk/Chunk.cpp
+        src/Chunk/Chunk.h
+        src/Chunk/Block.cpp
+        src/Chunk/Block.h
+)
 
 target_link_libraries(${PROJECT_NAME}
         OpenGL::GL

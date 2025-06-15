@@ -4,6 +4,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "../dependencies/stb/stb_image.h"
 #include "Window.h"
+#include "../Chunk/Chunk.h"
 
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
@@ -13,6 +14,8 @@ const char* TITLE = "Minecraft";
 GLFWwindow* Window::window = nullptr;
 
 unsigned int Window::transformLoc = 0;
+
+std::vector<Chunk> chunks; // set chunk
 
 float vertex[] = {
 
@@ -56,43 +59,33 @@ float vertex[] = {
 
 unsigned int indices[] = {
 
-	// Передняя грань
+	// Front side
 	0, 1, 2,
 	2, 3, 0,
 
-	// Задняя грань
+	// Back side
 	4, 5, 6,
 	6, 7, 4,
 
-	// Левая грань
+	// Left side
 	8, 9, 10,
 	10, 11, 8,
 
-	// Правая грань
+	// Right side
 	12, 13, 14,
 	14, 15, 12,
 
-	// Верхняя грань
+	// Upside
 	16, 17, 18,
 	18, 19, 16,
 
-	// Нижняя грань
+	// Downside
 	20, 21, 22,
 	22, 23, 20
 };
 
-glm::vec3 cubePositions[] = {
-	glm::vec3( 0.0f, 0.0f, 0.0f),
-	glm::vec3( 2.0f, 5.0f, -15.0f),
-	glm::vec3(-1.5f, -2.2f, -2.5f),
-	glm::vec3(-3.8f, -2.0f, -12.3f),
-	glm::vec3( 2.4f, -0.4f, -3.5f),
-	glm::vec3(-1.7f, 3.0f, -7.5f),
-	glm::vec3( 1.3f, -2.0f, -2.5f),
-	glm::vec3( 1.5f, 2.0f, -2.5f),
-	glm::vec3( 1.5f, 0.2f, -1.5f),
-	glm::vec3(-1.3f, 1.0f, -1.5f)
-};
+unsigned int cubPosLen;
+bool isTrue;
 
 unsigned int transformLoc;
 unsigned int modelLoc;
@@ -138,7 +131,7 @@ const char *vertex_shader_source = "#version 330 core\n"
 "uniform mat4 view;\n"
 "uniform mat4 projection;\n"
 "void main() {\n"
-"   gl_Position = projection * view * model * transform * vec4(aPos, 1.0f);\n"
+"   gl_Position = projection * view * model * vec4(aPos, 1.0f);\n"
 "   TexCoord = aTexCoord;\n"
 "}\0";
 
@@ -172,19 +165,24 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 	float yoffset = lastY - ypos;
 	lastX = xpos;
 	lastY = ypos;
+
 	float sensitivity = 0.1f;
 	xoffset *= sensitivity;
 	yoffset *= sensitivity;
+
 	yaw += xoffset;
 	pitch += yoffset;
+
 	if(pitch > 89.0f)
 		pitch = 89.0f;
 	if(pitch < -89.0f)
 		pitch = -89.0f;
+
 	glm::vec3 direction;
 	direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
 	direction.y = sin(glm::radians(pitch));
 	direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+
 	Window::cameraFront = glm::normalize(direction);
 }
 
@@ -192,7 +190,7 @@ void Window::processInput() {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
 
-	const float cameraSpeed = 2.5f * deltaTime; // adjust accordingly
+	const float cameraSpeed = 2.5f * deltaTime;
 
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 		cameraPos += cameraSpeed * cameraFront;
@@ -204,6 +202,7 @@ void Window::processInput() {
 		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 }
 int Window::Init(int width, int height, const char *title) {
+
 	if (!glfwInit()) {
 		std::cerr << "Failed to initialize GLFW." << std::endl;
 		glfwTerminate();
@@ -242,7 +241,7 @@ int Window::Init(int width, int height, const char *title) {
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
-	// Текстурные координаты (атрибут 1 - соответствует шейдеру)
+	// Texture coord (argument 1 - like shader)
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float))); // 5 or 8
 	glEnableVertexAttribArray(1);;
 
@@ -282,7 +281,7 @@ int Window::Init(int width, int height, const char *title) {
 	glAttachShader(shaderProgram, fragmentShader);
 	glLinkProgram(shaderProgram);
 
-	// 6. cheack shaders
+	// 6. check shaders
 	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
 	if (!success) {
 		glGetProgramInfoLog(shaderProgram, 512, nullptr, info_log);
@@ -294,15 +293,15 @@ int Window::Init(int width, int height, const char *title) {
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
 
-	// Получаем location uniform-переменных
+	// get location uniform-let
 	transformLoc = glGetUniformLocation(shaderProgram, "transform");
 	modelLoc = glGetUniformLocation(shaderProgram, "model");
 	viewLoc = glGetUniformLocation(shaderProgram, "view");
 	projectionLoc = glGetUniformLocation(shaderProgram, "projection");
 
-	// Настройка матриц
+	// Set matrix
 	model = glm::mat4(1.0f);
-	model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	// model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
 	view = glm::mat4(1.0f);
 	view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
@@ -346,7 +345,7 @@ int Window::Init(int width, int height, const char *title) {
 		std::cout << "[:ERROR:TEXTURE:] Failed to load texture" << std::endl;
 	}
 
-	glUniform1i(glGetUniformLocation(shaderProgram, "ourTexture"), 0);
+	glUniform1i(glGetUniformLocation(shaderProgram, "ourTexture"), 0); // ourTexture
 
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -365,7 +364,7 @@ int Window::Init(int width, int height, const char *title) {
 void Window::mainloop() {
 	if (Init(WINDOW_WIDTH, WINDOW_HEIGHT, "Minecraft 2") != 0) {
 		std::cout << "[:ERROR:] Failed initialization!" << std::endl;
-		return; // Инициализация не удалась
+		return; // Failed initialization
 	}
 
 	lastTime = glfwGetTime();
@@ -373,17 +372,17 @@ void Window::mainloop() {
 	fps = 0.0;
 
 	while (!glfwWindowShouldClose(window)) {
-		// Подсчёт FPS
+		// Count FPS
 		double currentTime = glfwGetTime();
 		frameCount++;
 
-		// Если прошла секунда - обновляем FPS
+		// If second - update FPS
 		if (currentTime - lastTime >= 1.0) {
 			fps = frameCount;
 			frameCount = 0;
 			lastTime = currentTime;
 
-			// Выводим FPS в заголовок окна
+			// Print FPS in title
 			std::string title = std::string(TITLE) + " | FPS: " + std::to_string((int)fps);
 			glfwSetWindowTitle(window, title.c_str());
 		}
@@ -407,26 +406,7 @@ void Window::mainloop() {
 		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 		glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
-		// Создаем матрицу преобразования для вращения куба
-		auto trans = glm::mat4(1.0f);
-		trans = glm::translate(trans, glm::vec3(0.0f, 0.0f, 0.0f));
-		trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.5f, 1.0f, 5.0f));
-
-		glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
-
 		glBindVertexArray(VAO);
-
-		for(unsigned int i = 0; i < 10; i++) {
-			// Создаем модельную матрицу для каждого куба
-			glm::mat4 model = glm::mat4(1.0f);
-			model = glm::translate(model, cubePositions[i]);
-			model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.5f, 1.0f, 0.0f));
-
-			// Передаем модельную матрицу в шейдер
-			glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-
-			glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-		}
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
