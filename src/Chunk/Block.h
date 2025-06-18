@@ -14,7 +14,7 @@
 
 class Block {
 public:
-	int blocktype; // type block
+	int block_id; // id block
 	float x, y, z; // position in chunk
 	float wx, wy, wz; // position in world
 };
