@@ -1,6 +1,7 @@
 #include "Window/Window.h"
 
 int main() {
-    Window::mainloop();
-    return 0;
+   Window::mainloop();
+   return 0;
 }
+

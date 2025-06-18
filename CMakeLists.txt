@@ -1,3 +1,4 @@
+
 cmake_minimum_required(VERSION 3.31) # 3.31
 project(untitled1)
 
@@ -8,7 +9,18 @@ find_package(OpenGL REQUIRED)
 
 # Для GLFW (один из вариантов оконной системы)
 if(NOT GLFW_FOUND)
-    # Можно использовать встроенный fetch или найти установленный пакет
+
+# Можно использовать встроенный fetch или найти установленный пакет
+cmake_minimum_required(VERSION 3.31)
+project(MineCraft2)
+
+set(CMAKE_CXX_STANDARD 20)
+
+find_package(OpenGL REQUIRED)
+
+if(NOT GLFW_FOUND)
+
+
     include(FetchContent)
     FetchContent_Declare(
             glfw
@@ -18,26 +30,26 @@ if(NOT GLFW_FOUND)
     FetchContent_MakeAvailable(glfw)
 endif()
 
-# Для Glad (загрузчик OpenGL)
-# Можно сгенерировать glad на https://glad.dav1d.de и добавить в проект
-# Или использовать fetch
+
 FetchContent_Declare(
-        glad
-        GIT_REPOSITORY https://github.com/Dav1dde/glad.git
-        GIT_TAG v0.1.36
+    glad
+    GIT_REPOSITORY https://github.com/Dav1dde/glad.git
+    GIT_TAG v0.1.36
 )
 FetchContent_MakeAvailable(glad)
 
-add_executable(untitled1 src/main.cpp
-        src/Events/Events.cpp
-#        src/Events/Events.h
+# Подключаем зависимости
+
+add_executable(${PROJECT_NAME} src/main.cpp
         src/Window/Window.cpp
-#        src/Window/Window.h
-        src/Window/Camera.cpp
-#        src/Window/Camera.h
+        src/Window/Window.h
+        src/Chunk/Chunk.cpp
+        src/Chunk/Chunk.h
+        src/Chunk/Block.cpp
+        src/Chunk/Block.h
 )
 
-# Подключаем зависимости
+
 target_link_libraries(${PROJECT_NAME}
         OpenGL::GL
         glfw
