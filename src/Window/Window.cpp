@@ -12,6 +12,8 @@
 #include "../Chunk/ChunkManager.h"
 #include "Window.h"
 
+unsigned int Window::textureAtlas = 0;
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "../dependencies/stb/stb_image.h"
 
@@ -129,7 +131,7 @@ const char *fragmentShaderSource =
 "\n"
 "out vec4 FragColor;\n"
 "\n"
-"uniform sampler2D ourTexture;\n"
+"uniform sampler2D textureAtlas;\n"
 "uniform vec3 lightPos = vec3(100.0, 100.0, 100.0);\n"
 "\n"
 "void main() {\n"
@@ -140,12 +142,44 @@ const char *fragmentShaderSource =
 "    vec3 diffuse = diff * vec3(1.0, 1.0, 1.0);\n"
 "    \n"
 "    // Текстура + освещение\n"
-"    vec3 texColor = texture(ourTexture, TexCoord).rgb;\n"
-"    FragColor = vec4(texColor * (diffuse + 0.3), 1.0); // 0.3 - ambien\n"
+"    vec3 texColor = texture(textureAtlas, TexCoord).rgb;\n"
+"    FragColor = vec4(texColor * (diffuse + 0.3), 1.0); // 0.3 - ambient\n"
 "}\0";
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
+}
+
+unsigned int LoadTexture(const char* path) {
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+
+    int width, height, nrComponents;
+    stbi_set_flip_vertically_on_load(true); // Добавьте эту строку
+    unsigned char *data = stbi_load(path, &width, &height, &nrComponents, 0);
+
+    if (data) {
+        GLenum format;
+        if (nrComponents == 1) format = GL_RED;
+        else if (nrComponents == 3) format = GL_RGB;
+        else if (nrComponents == 4) format = GL_RGBA;
+
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        stbi_image_free(data);
+    } else {
+        std::cerr << "Failed to load texture: " << path << std::endl;
+        stbi_image_free(data);
+        return 0;
+    }
+    return textureID;
 }
 
 // Callback for mouse:
@@ -253,42 +287,19 @@ int Window::initialize(int width, int height, const char *title) {
     glEnableVertexAttribArray(1);
     glEnableVertexAttribArray(2);
 
+    textureAtlas = LoadTexture("C:/Users/Asg/CLionProjects/MineCraft2/src/Assets/Sprite-0001-export.png");
+    if (textureAtlas == 0) {
+        std::cerr << "Failed to load texture atlas!" << std::endl;
+        return -1;
+    }
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
     glUseProgram(shaderProgram);
     glBindVertexArray(Window::VAO);
 
-    // ******************************  Texture  ******************************
 
-    unsigned int texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    Window::texture = texture;
-
-    // set the texture wrapping/filtering options (on currently bound texture)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    // load and generate the texture
-    int texture_width, texture_height, texture_nrChannels;
-    unsigned char *data = stbi_load("C:/Users/Asg/CLionProjects/untitled1/src/Window/Sprite-0001-export.png", &texture_width, &texture_height,
-    &texture_nrChannels, 0);
-
-    if (data)
-    {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture_width, texture_height, 0,
-             GL_RGBA, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    } else {
-        std::cout << "[:ERROR:] Failed to load texture" << std::endl;
-    }
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-    stbi_image_free(data);
-
-    // ********************************    End    ***********************************
 
     projection = glm::perspective(
     glm::radians(45.0f),
@@ -340,38 +351,6 @@ void Window::processInput() {
 void Window::mainloop() {
     initialize(WINDOW_WIDTH, WINDOW_HEIGHT, "MineCraft");
 
-    // Set up EBO
-    unsigned int indices[] = {
-        // Передняя грань
-        0, 1, 2,
-        2, 3, 0,
-
-        // Задняя грань
-        4, 5, 6,
-        6, 7, 4,
-
-        // Верхняя грань
-        8, 9, 10,
-        10, 11, 8,
-
-        // Нижняя грань
-        12, 13, 14,
-        14, 15, 12,
-
-        // Правая грань
-        16, 17, 18,
-        18, 19, 16,
-
-        // Левая грань
-        20, 21, 22,
-        22, 23, 20
-    };
-
-    unsigned int EBO;
-    glGenBuffers(1, &EBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
     // Main loop rendering
     while (!isShouldClose()) {
         // Input processing
@@ -397,9 +376,10 @@ void Window::mainloop() {
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
         // Bind texture
+
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glUniform1i(glGetUniformLocation(shaderProgram, "ourTexture"), 0);
+        glBindTexture(GL_TEXTURE_2D, textureAtlas);
+        glUniform1i(glGetUniformLocation(shaderProgram, "textureAtlas"), 0);
 
         // Activate shader
         glUseProgram(shaderProgram);

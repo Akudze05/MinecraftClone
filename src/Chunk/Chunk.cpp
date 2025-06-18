@@ -123,6 +123,12 @@ void Chunk::SetBlock(int x, int y, int z, unsigned char type) {
 
 void Chunk::AddFace(const glm::vec3& position, const glm::vec3& normal, 
                    unsigned char blockType, int face) {
+
+    // Текстурные координаты (0-1 для всего блока)
+    const glm::vec2 texCoords[4] = {
+        {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}
+    };
+
     // Текстурные координаты для грани (нижний левый, нижний правый, верхний правый, верхний левый)
     const glm::vec2 baseTexCoords[4] = {
         glm::vec2(0.0f, 0.0f),
