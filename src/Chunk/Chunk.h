@@ -8,8 +8,13 @@
 
 class Chunk {
 public:
-	const int CHUNK_SIZE = 16;
-	const int CHUNK_HEIGHT = 256;
+	static constexpr int CHUNK_SIZE = 16;
+	static constexpr int CHUNK_HEIGHT = 256;
+
+	Chunk(int x, int z) : x(x), z(z) {
+		blocks = new BlockType[CHUNK_SIZE * CHUNK_HEIGHT * CHUNK_SIZE];
+		// Инициализация блоков (можно заполнить воздухом)
+	}
 
 	static void generateChunk();
 
