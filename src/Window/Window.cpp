@@ -9,10 +9,11 @@
 #include <C:\Users\Asg\CLionProjects\MineEngine\dependencies\glm/gtc/matrix_transform.hpp>
 #include <C:\Users\Asg\CLionProjects\MineEngine\dependencies\glm/gtc/type_ptr.hpp>
 #include "Camera.h"
+#include "../Chunk/ChunkManager.h"
 #include "Window.h"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "../dependencies/stb/stb_image.h"
 
 #define WINDOW_WIDTH 1920
 #define WINDOW_HEIGHT 1080
@@ -30,6 +31,9 @@ unsigned int Window::VAO = 0;        // Добавляем это
 unsigned int Window::VBO = 0;
 
 GLFWwindow* Window::window;
+
+ChunkManager chunkManager;
+glm::vec3 playerPosition;
 
 float texCoords[] = {
     0.0f, 0.0f, // lower-left corner
@@ -98,29 +102,46 @@ int texture_width, texture_height, texture_nrChannels;
 unsigned char *data = stbi_load("C:/Users/Asg/CLionProjects/untitled1/src/assets/Sprite-0001.png", &texture_width, &texture_height,
 &texture_nrChannels, 0);
 
-const char *vertexShaderSource = "#version 330 core\n"
+const char *vertexShaderSource =
+"#version 330 core\n"
 "layout (location = 0) in vec3 aPos;\n"
-"layout (location = 1) in vec3 aColor;\n"
+"layout (location = 1) in vec3 aNormal;\n"
 "layout (location = 2) in vec2 aTexCoord;\n"
-"out vec3 ourColor;\n"
+"out vec3 FragPos;\n"
 "out vec2 TexCoord;\n"
+"out vec3 Normal;\n"
 "uniform mat4 view;\n"
 "uniform mat4 projection;\n"
+"uniform mat4 model;\n"
 "\n"
 "void main() {\n"
-"   gl_Position = projection * view * vec4(aPos, 1.0);\n"
-"   ourColor = aColor;\n"
+"   FragPos = vec3(model * vec4(aPos, 1.0));\n"
+"   Normal = mat3(transpose(inverse(model))) * aNormal;\n"
 "   TexCoord = aTexCoord;\n"
+"   gl_Position = projection * view * model * vec4(aPos, 1.0);\n"
 "}\0";
 
-const char *fragmentShaderSource = "#version 330 core\n"
-"out vec4 FragColor;\n"
-"in vec3 ourColor;\n"
+const char *fragmentShaderSource =
+"#version 330 core\n"
+"in vec3 FragPos;\n"
+"in vec3 Normal;\n"
 "in vec2 TexCoord;\n"
+"\n"
+"out vec4 FragColor;\n"
+"\n"
 "uniform sampler2D ourTexture;\n"
-"void main()\n"
-"{\n"
-"    FragColor = texture(ourTexture, TexCoord) * vec4(ourColor, 1.0);\n"
+"uniform vec3 lightPos = vec3(100.0, 100.0, 100.0);\n"
+"\n"
+"void main() {\n"
+"    // Простое освещение\n"
+"    vec3 norm = normalize(Normal);\n"
+"    vec3 lightDir = normalize(lightPos - FragPos);\n"
+"    float diff = max(dot(norm, lightDir), 0.0);\n"
+"    vec3 diffuse = diff * vec3(1.0, 1.0, 1.0);\n"
+"    \n"
+"    // Текстура + освещение\n"
+"    vec3 texColor = texture(ourTexture, TexCoord).rgb;\n"
+"    FragColor = vec4(texColor * (diffuse + 0.3), 1.0); // 0.3 - ambien\n"
 "}\0";
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
@@ -161,6 +182,11 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 }
 
 int Window::initialize(int width, int height, const char *title) {
+
+    playerPosition = camera.Position; // Обновляем позицию игрока
+    camera.Position = glm::vec3(0, 70, 50); // Жёстко задайте позицию для теста
+    camera.Front = glm::vec3(0, -0.5f, -1.0f); // Смотрит вниз и вперёд
+
     // Init GLFW
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW!" << std::endl;
@@ -351,6 +377,9 @@ void Window::mainloop() {
         // Input processing
         processInput();
 
+        // Обновляем чанки
+        chunkManager.Update(playerPosition);
+
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
@@ -358,14 +387,12 @@ void Window::mainloop() {
         // Clear buffers
         glClearColor(0.3f, 0.6f, 0.75f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        
-        // Activate shader
-        glUseProgram(shaderProgram);
-
-        glEnable(GL_DEPTH_TEST);
 
         // Set up view/projection matrices
         glm::mat4 view = camera.GetViewMatrix();
+        // В Window::mainloop() замените:
+        glm::mat4 projection = glm::perspective(glm::radians(45.0f),
+            (float)WINDOW_WIDTH/(float)WINDOW_HEIGHT, 0.1f, 1000.0f); // Было 100.0f
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
@@ -374,9 +401,16 @@ void Window::mainloop() {
         glBindTexture(GL_TEXTURE_2D, texture);
         glUniform1i(glGetUniformLocation(shaderProgram, "ourTexture"), 0);
 
+        // Activate shader
+        glUseProgram(shaderProgram);
+
+        glEnable(GL_DEPTH_TEST);
+
         // Draw
-        glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+        // glBindVertexArray(VAO);
+        // glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+
+        chunkManager.Render();
 
         // Swap buffers and poll events
         swapBuffers();

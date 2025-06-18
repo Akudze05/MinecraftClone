@@ -7,9 +7,6 @@ set(CMAKE_CXX_STANDARD 20)
 # Находим необходимые пакеты
 find_package(OpenGL REQUIRED)
 
-# Для GLFW (один из вариантов оконной системы)
-if(NOT GLFW_FOUND)
-
 # Можно использовать встроенный fetch или найти установленный пакет
 cmake_minimum_required(VERSION 3.31)
 project(MineCraft2)
@@ -47,6 +44,8 @@ add_executable(${PROJECT_NAME} src/main.cpp
         src/Chunk/Chunk.h
         src/Chunk/Block.cpp
         src/Chunk/Block.h
+        src/Chunk/ChunkManager.cpp
+        src/Chunk/ChunkManager.h
 )
 
 

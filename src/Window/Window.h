@@ -18,6 +18,7 @@ public:
     static unsigned int viewLoc;
     static float lastX, lastY;
     static bool firstMouse;
+    static unsigned int texture;
 
     static int initialize(int width, int height, const char* title);
     static void terminate();
